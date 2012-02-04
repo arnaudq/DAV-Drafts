@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?xml-stylesheet type="text/xsl" href="../../rfc2629.xslt"?>
+<?xml-stylesheet type="text/xsl" href="rfc2629.xslt"?>
 <!DOCTYPE rfc SYSTEM 'rfc2629.dtd'
 [
 <!ENTITY rfc2119 PUBLIC '' 'bibxml/reference.RFC.2119.xml'>
@@ -37,6 +37,20 @@
         <email>cyrus@daboo.name</email>
         <uri>http://www.apple.com/</uri>
       </address>
+    </author>
+    <author initials="A." surname="Quillaud" fullname="Arnaud Quillaud">
+    <organization abbrev="Oracle">Oracle Corporation</organization>
+    <address>
+      <postal>
+        <street>180, Avenue de l'Europe</street>
+        <city>Saint Ismier cedex</city>
+        <region></region>
+        <code>38334</code>
+        <country>France</country>
+      </postal>
+      <email>arnaud.quillaud@oracle.com</email>
+      <uri>http://www.oracle.com/</uri>
+    </address>
     </author>
     <date />
     <area>Applications</area>
@@ -146,6 +160,61 @@
           </t>
         </list>
         </t>
+        <t>
+          In the following example, the client adds a new attachment to a non recurring event and asks
+          the server (via the Prefer header) to return the updated version of that event in the
+          response.
+        </t>
+        <figure>
+          <preamble>
+            &gt;&gt; Request &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+POST /events/def364.ics?action=attachment-add HTTP/1.1
+Host: cal.example.com
+Content-Type: text/html; charset="utf-8“
+Content-Disposition:attachment;filename=agenda.html
+Content-Length: xxxx
+Prefer: return-representation
+
+<html>
+  <body>
+    <h1>Agenda</h1>
+  </body>
+</html
+
+]]>
+          </artwork>
+        </figure>
+        <figure>
+          <preamble>
+            &gt;&gt; Response &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+HTTP/1.1 201 Created
+Content-Type: text/calendar charset="utf-8"
+Content-Length: yyyy
+Content-Location: http://cal.example.com/events/def364.ics
+ETag: "123456789-000-111"
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Corp.//CalDAV Server//EN
+BEGIN:VEVENT
+UID:20010712T182145Z-123401@example.com
+DTSTAMP:20120201T203412Z
+DTSTART:20120714T170000Z
+DTEND:20120715T040000Z
+SUMMARY:One-off meeting
+ATTACH;MANAGED-ID=97S23;ETAG=987654321-555-441;FMT-TYPE=text/html;SIZE=xxxx;
+ FILENAME=agenda.html:https://cal.example.com/attach/def364/34X22R
+END:VEVENT
+END:VCALENDAR
+]]>
+          </artwork>
+        </figure>
       </section>
       <section title="Updating Attachments" anchor="attachment-update">
         <t>To change the data of an existing managed attachment in a calendar object resource, the following occurs:
@@ -172,6 +241,61 @@
           </t>
         </list>
         </t>
+        <t>
+          In the following example, the client updates an existing attachment by passing its attach id
+          in the request.
+        </t>
+        <figure>
+          <preamble>
+            &gt;&gt; Request &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+POST /events/def364.ics?action=attachment-update&id=97S23 HTTP/1.1
+Host: cal.example.com
+Content-Type: text/html; charset="utf-8“
+Content-Disposition:attachment;filename=agenda.html
+Content-Length: xxxx
+Prefer: return-representation
+
+<html>
+  <body>
+    <h1>Agenda</h1>
+    <p>Discuss attachment draft</p>
+  </body>
+</html
+
+]]>
+          </artwork>
+        </figure>
+        <figure>
+          <preamble>
+            &gt;&gt; Response &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+HTTP/1.1 200 OK
+Content-Type: text/calendar charset="utf-8"
+Content-Length: yyyz
+Content-Location: http://cal.example.com/events/def364.ics
+ETag: "123456789-000-222"
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Corp.//CalDAV Server//EN
+BEGIN:VEVENT
+UID:20010712T182145Z-123401@example.com
+DTSTAMP:20120201T203412Z
+DTSTART:20120714T170000Z
+DTEND:20120715T040000Z
+SUMMARY:One-off meeting
+ATTACH;MANAGED-ID=97S23;ETAG=987654321-555-666;FMT-TYPE=text/html;SIZE=xxxy;
+ FILENAME=agenda.html:https://cal.example.com/attach/def364/34X22R
+END:VEVENT
+END:VCALENDAR
+]]>
+          </artwork>
+        </figure>
       </section>
       <section title="Removing Attachments via POST" anchor="attachment-remove">
         <t>To remove an attachment on an existing calendar object resource, the following occurs:
@@ -195,6 +319,36 @@
           </t>
         </list>
         </t>
+        <t>
+          In the following example, the client deletes an existing attachment by passing its attach id
+          in the request. The "Prefer" header is not set in the request so the calendar resource
+          is not returned in the response.
+        </t>
+        <figure>
+          <preamble>
+            &gt;&gt; Request &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+POST /events/def364.ics?action=attachment-remove&id=97S23 HTTP/1.1
+Host: cal.example.com
+Content-Length: 0
+
+]]>
+          </artwork>
+        </figure>
+        <figure>
+          <preamble>
+            &gt;&gt; Response &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+HTTP/1.1 204 No Content
+Content-Length: 0
+
+]]>
+          </artwork>
+        </figure>
       </section>
       <section title="Adding Existing Managed Attachments via PUT" anchor="attachment-add-put">
         <t>Clients can make use of existing managed attachments by adding the corresponding "ATTACH" property to calendar object resources (subject to the restrictions described in <xref target="acls"/>).</t>
@@ -331,5 +485,182 @@ ATTACH;MANAGED-ID=aUNhbGVuZGFy:http://attachments.example.c
                 </list>
             </t>
         </section>
+    <section title='Example Involving Recurring Events'>
+        <t>
+          In the following example, the organizer of a recurring meeting adds an agenda
+          (HTML attachment) to the corresponding calendar resource.  Attendees of
+          the meeting are granted read access to the newly created
+          attachment resource. Their own copy of the meeting is updated to include the
+          new ATTACH property pointing to the attachment resource and they are notified
+          of the change via their scheduling inbox.
+        </t>
+        <figure>
+          <preamble>
+            &gt;&gt; Request &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+POST /events/def365.ics?action=attachment-add HTTP/1.1
+Host: cal.example.com
+Content-Type: text/html; charset="utf-8“
+Content-Disposition:attachment;filename=agenda.html
+Content-Length: xxxx
+Prefer: return-representation
+
+<html>
+  <body>
+    <h1>Agenda</h1>
+    <p>As usual</p>
+  </body>
+</html
+
+]]>
+          </artwork>
+        </figure>
+        <figure>
+          <preamble>
+            &gt;&gt; Response &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+HTTP/1.1 201 Created
+Content-Type: text/calendar charset="utf-8"
+Content-Length: yyyy
+Content-Location: http://cal.example.com/events/def365.ics
+ETag: "123456789-000-111"
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Corp.//CalDAV Server//EN
+BEGIN:VTIMEZONE
+LAST-MODIFIED:20040110T032845Z
+TZID:US/Eastern
+BEGIN:DAYLIGHT
+DTSTART:20000404T020000
+RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=4
+TZNAME:EDT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+END:DAYLIGHT
+BEGIN:STANDARD
+DTSTART:20001026T020000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+TZNAME:EST
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:20010712T182145Z-123401@example.com
+DTSTAMP:20120201T203412Z
+DTSTART;TZID=US/Eastern:20120206T100000
+DURATION:PT1H
+RRULE:FREQ=WEEKLY
+SUMMARY:Planning Meeting
+ORGANIZER:mailto:cyrus@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=ACCEPTED:mailto:cyrus@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=ACCEPTED:mailto:arnaudq@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=NEEDS-ACTION:mailto:mike@example.com
+ATTACH;MANAGED-ID=97S23;ETAG=987654321-555-441;FMT-TYPE=text/html;SIZE=xxxx;
+ FILENAME=agenda.html:https://cal.example.com/attach/def365/34X22R
+END:VEVENT
+END:VCALENDAR
+]]>
+          </artwork>
+        </figure>
+        <t>
+          The organizer has a more specific agenda for the 20th of February meeting.
+          It is added to that particular instance of the meeting by specifying the
+          rid parameter.
+        </t>
+        <figure>
+          <preamble>
+            &gt;&gt; Request &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+POST /events/def365.ics?action=attachment-add&rid=20120220T150000Z HTTP/1.1
+Host: cal.example.com
+Content-Type: text/html; charset="utf-8“
+Content-Disposition:attachment;filename=agenda0220.html
+Content-Length: xxxx
+Prefer: return-representation
+
+<html>
+  <body>
+    <h1>Agenda</h1>
+    <p>Something different, for a change</p>
+  </body>
+</html
+
+]]>
+          </artwork>
+        </figure>
+        <figure>
+          <preamble>
+            &gt;&gt; Response &lt;&lt;
+          </preamble>
+          <artwork>
+<![CDATA[
+HTTP/1.1 201 Created
+Content-Type: text/calendar charset="utf-8"
+Content-Length: yyyy
+Content-Location: http://cal.example.com/events/def365.ics
+ETag: "123456789-000-222"
+
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Example Corp.//CalDAV Server//EN
+BEGIN:VTIMEZONE
+LAST-MODIFIED:20040110T032845Z
+TZID:US/Eastern
+BEGIN:DAYLIGHT
+DTSTART:20000404T020000
+RRULE:FREQ=YEARLY;BYDAY=1SU;BYMONTH=4
+TZNAME:EDT
+TZOFFSETFROM:-0500
+TZOFFSETTO:-0400
+END:DAYLIGHT
+BEGIN:STANDARD
+DTSTART:20001026T020000
+RRULE:FREQ=YEARLY;BYDAY=-1SU;BYMONTH=10
+TZNAME:EST
+TZOFFSETFROM:-0400
+TZOFFSETTO:-0500
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:20010712T182145Z-123401@example.com
+DTSTAMP:20120201T203412Z
+DTSTART;TZID=US/Eastern:20120206T100000
+DURATION:PT1H
+RRULE:FREQ=WEEKLY
+SUMMARY:Planning Meeting
+ORGANIZER:mailto:cyrus@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=ACCEPTED:mailto:cyrus@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=ACCEPTED:mailto:arnaudq@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=NEEDS-ACTION:mailto:mike@example.com
+ATTACH;MANAGED-ID=97S23;ETAG=987654321-555-441;FMT-TYPE=text/html;SIZE=xxxx;
+ FILENAME=agenda.html:https://cal.example.com/attach/def365/34X22R
+END:VEVENT
+BEGIN:VEVENT
+UID:20010712T182145Z-123401@example.com
+RECURRENCE-ID;TZID=US/Eastern:20120220T100000
+DTSTAMP:20120201T203412Z
+DTSTART;TZID=US/Eastern:20120220T100000
+DURATION:PT1H
+SUMMARY:Planning Meeting
+ORGANIZER:mailto:cyrus@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=ACCEPTED:mailto:cyrus@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=ACCEPTED:mailto:arnaudq@example.com
+ATTENDEE;CUTYPE=INDIVIDUAL;PARTSTAT=NEEDS-ACTION:mailto:mike@example.com
+ATTACH;MANAGED-ID=33225;ETAG=987654321-555-263;FMT-TYPE=text/html;SIZE=xxxx;
+ FILENAME=agenda0220.html:https://cal.example.com/attach/def365/FGZ225
+END:VEVENT
+END:VCALENDAR
+]]>
+          </artwork>
+        </figure>
+    </section>
   </back>
 </rfc>
